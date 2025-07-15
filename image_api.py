@@ -89,4 +89,4 @@ def format_image_endpoint():
 
 # Permite executar diretamente: python image_api.py
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000) 
+    app.run(host="0.0.0.0", port=6666) 

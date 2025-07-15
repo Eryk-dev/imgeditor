@@ -17,7 +17,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 COPY . .
 
 # Expose the API port
-EXPOSE 8000
+EXPOSE 6666
 
 # Run the application
 CMD ["python", "image_api.py"] 
