@@ -1,14 +1,9 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from flask import Flask, request, jsonify
 from PIL import Image, ImageChops
 import base64
 import io
 
-app = FastAPI(
-    title="Image Formatter API",
-    description="Recebe uma imagem em base64, formata para 1200x1200 (WebP) e devolve em base64.",
-    version="1.0.0",
-)
+app = Flask(__name__)
 
 def trim_white_borders(im: Image.Image, threshold: int = 240) -> Image.Image:
     """Remove bordas brancas da imagem com um limiar definido."""
@@ -60,24 +55,24 @@ def format_image(img: Image.Image, final_size: tuple[int, int] = (1200, 1200), t
     return new_img.resize(final_size, Image.LANCZOS)
 
 
-class ImageRequest(BaseModel):
-    image_base64: str
-    threshold: int | None = 240  # Permite ajustar o limiar opcionalmente
-
-class ImageResponse(BaseModel):
-    formatted_image_base64: str
-
-
-@app.post("/format_image", response_model=ImageResponse)
-async def format_image_endpoint(request: ImageRequest):
+@app.route("/format_image", methods=["POST"])
+def format_image_endpoint():
     """Endpoint que recebe base64 PNG, devolve base64 WEBP formatado."""
     try:
+        # Recupera dados do JSON
+        data = request.get_json(force=True)
+        if not data or "image_base64" not in data:
+            return jsonify(error="'image_base64' é obrigatório"), 400
+
+        image_base64_str = data["image_base64"]
+        threshold = data.get("threshold", 240)
+
         # Decodifica base64 para bytes
-        image_bytes = base64.b64decode(request.image_base64)
+        image_bytes = base64.b64decode(image_base64_str)
         img = Image.open(io.BytesIO(image_bytes))
 
         # Formata a imagem
-        formatted_img = format_image(img, threshold=request.threshold or 240)
+        formatted_img = format_image(img, threshold=threshold)
 
         # Salva em memória no formato WebP
         buffer = io.BytesIO()
@@ -86,7 +81,12 @@ async def format_image_endpoint(request: ImageRequest):
 
         # Codifica de volta para base64
         formatted_base64 = base64.b64encode(buffer.read()).decode("utf-8")
-        return {"formatted_image_base64": formatted_base64}
+        return jsonify(formatted_image_base64=formatted_base64)
 
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e)) 
+        return jsonify(error=str(e)), 400
+
+
+# Permite executar diretamente: python image_api.py
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8000) 
