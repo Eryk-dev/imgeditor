@@ -74,9 +74,9 @@ def format_image_endpoint():
         # Formata a imagem
         formatted_img = format_image(img, threshold=threshold)
 
-        # Salva em memória no formato WebP
+        # Salva em memória no formato JPEG
         buffer = io.BytesIO()
-        formatted_img.save(buffer, format="WEBP")
+        formatted_img.save(buffer, format="JPEG")
         buffer.seek(0)
 
         # Codifica de volta para base64
